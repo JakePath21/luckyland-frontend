@@ -4,7 +4,6 @@ import Register from '../views/Register.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Catalog from '../views/Catalog.vue';
 import CreateItem from '../views/CreateItem.vue';
-import ItemDetail from '../views/ItemDetail.vue'; 
 
 const routes = [
   { path: '/register', component: Register },
@@ -15,6 +14,12 @@ const routes = [
     name: 'ItemDetail',
     component: () => import('../views/ItemDetail.vue'),
     props: true
+  },  
+  {
+    path: '/catalog/edit/:itemId',
+    name: 'EditItem',
+    component: () => import('../views/EditItem.vue'),
+    props: true,
   },  
   { 
     path: '/dashboard', 
