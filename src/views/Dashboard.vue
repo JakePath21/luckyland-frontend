@@ -9,7 +9,7 @@
             <img :src="getAvatarUrl()" alt="Base Avatar" class="avatar-image" />
             <img
               v-for="item in equippedItems"
-              :key="item.id"
+              :key="item.item_id"
               :src="getImageUrl(item.image_url)"
               alt="Equipped Item"
               class="equipped-item-overlay"
@@ -87,13 +87,23 @@
         favoriteGame: null,
       });
   
+      // Fetch Owned Items
       const fetchOwnedItems = async () => {
         try {
           const response = await axios.get(`http://localhost:5000/api/catalog/owned/${userStore.id}`);
           ownedItems.value = response.data;
-          equippedItems.value = response.data.filter((item) => item.equipped);
         } catch (error) {
           console.error('Failed to fetch owned items:', error);
+        }
+      };
+  
+      // Fetch Equipped Items
+      const fetchEquippedItems = async () => {
+        try {
+          const response = await axios.get(`http://localhost:5000/api/catalog/equipped/${userStore.id}`);
+          equippedItems.value = response.data;
+        } catch (error) {
+          console.error('Failed to fetch equipped items:', error);
         }
       };
   
@@ -102,6 +112,7 @@
   
       onMounted(() => {
         fetchOwnedItems();
+        fetchEquippedItems();
       });
   
       return { userStore, ownedItems, equippedItems, registrationDate, stats, getAvatarUrl, getImageUrl };
@@ -156,6 +167,7 @@
     object-fit: contain;
   }
   
+  /* Player Info */
   .player-info {
     text-align: left;
     margin-top: 1em;

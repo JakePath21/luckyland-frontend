@@ -99,9 +99,9 @@
   
       // Navigate to item detail page
       const viewItemDetails = (itemId) => {
-            console.log('Navigating to item details with ID:', itemId); // Debugging log
             router.push(`/catalog/${itemId}`);
         };
+
 
   
       // Open confirmation popup
@@ -117,26 +117,33 @@
       };
   
       // Confirm purchase
-      const confirmPurchase = async () => {
-        try {
-          await axios.post('http://localhost:5000/api/catalog/buy', {
-            userId: userStore.id,
-            itemId: selectedItem.value.id,
-          });
-  
-          message.value = 'Item purchased successfully!';
-  
-          // Fetch updated user balance
-          const response = await axios.get(`http://localhost:5000/api/auth/user/${encodeURIComponent(userStore.username)}`);
-          userStore.setGold(response.data.gold);
-          userStore.setTickets(response.data.tickets);
-        } catch (error) {
-          message.value = error.response?.data?.message || 'Failed to purchase item.';
-          console.error('Purchase error:', error);
-        } finally {
-          closePopup();
-        }
-      };
+    const confirmPurchase = async () => {
+            try {
+                await axios.post('http://localhost:5000/api/catalog/buy', {
+                userId: userStore.id,
+                itemId: selectedItem.value.id,
+                });
+
+                message.value = 'Item purchased successfully!';
+
+                // Update the purchased item to mark it as owned
+                const purchasedItem = items.value.find((item) => item.id === selectedItem.value.id);
+                if (purchasedItem) {
+                purchasedItem.owned = true;
+                }
+
+                // Fetch updated user balance
+                const response = await axios.get(`http://localhost:5000/api/auth/user/${encodeURIComponent(userStore.username)}`);
+                userStore.setGold(response.data.gold);
+                userStore.setTickets(response.data.tickets);
+            } catch (error) {
+                message.value = error.response?.data?.message || 'Failed to purchase item.';
+                console.error('Purchase error:', error);
+            } finally {
+                closePopup();
+            }
+        };
+
   
       // Get formatted price text
       const getPriceText = (item) => {

@@ -10,7 +10,12 @@ const routes = [
   { path: '/register', component: Register },
   { path: '/login', component: Login },
   { path: '/catalog', component: Catalog },
-  { path: '/catalog/:itemId', component: ItemDetail, props: true },
+  {
+    path: '/catalog/:itemId',
+    name: 'ItemDetail',
+    component: () => import('../views/ItemDetail.vue'),
+    props: true
+  },  
   { 
     path: '/dashboard', 
     component: Dashboard,

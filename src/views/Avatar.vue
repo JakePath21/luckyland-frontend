@@ -24,12 +24,11 @@
             You don't own any items yet.
           </div>
           <div v-else class="items-grid">
-            <div v-for="item in ownedItems" :key="item.id" class="item-card">
-                <img :src="getImageUrl(item.image_url)" alt="Item Image" class="item-image" />
-                <!-- <h4>{{ item.name }} (ID: {{ item.item_id }})</h4> -->
-                 <h4> {{ item.name }}</h4>
-                <button v-if="item.equipped" @click="unequipItem(item.item_id)">Unequip</button>
-                <button v-else @click="equipItem(item.item_id)">Equip</button>
+            <div v-for="item in ownedItems" :key="item.item_id" class="item-card">
+              <img :src="getImageUrl(item.image_url)" alt="Item Image" class="item-image" />
+              <h4>{{ item.name }}</h4>
+              <button v-if="isItemEquipped(item.item_id)" @click="toggleEquipItem(item)">Unequip</button>
+              <button v-else @click="toggleEquipItem(item)">Equip</button>
             </div>
           </div>
           <p v-if="message">{{ message }}</p>
@@ -51,70 +50,76 @@
   
       // Fetch Owned Items
       const fetchOwnedItems = async () => {
-            try {
-                const response = await axios.get(`http://localhost:5000/api/catalog/owned/${userStore.id}`);
-                console.log('Owned items:', response.data); // Debugging line
-                ownedItems.value = response.data;
-                equippedItems.value = response.data.filter((item) => item.equipped);
-            } catch (error) {
-                console.error('Failed to fetch owned items:', error);
-                message.value = 'Failed to load owned items.';
-            }
-        };
-
-  
-      // Equip Item
-      const equipItem = async (itemId) => {
         try {
-          console.log('Equipping item with item ID:', itemId); // Debug log
-          await axios.post('http://localhost:5000/api/catalog/equip', {
-            userId: userStore.id,
-            itemId: itemId,
-          });
-          message.value = 'Item equipped successfully!';
-          fetchOwnedItems(); // Refresh the list after equipping
+          const response = await axios.get(`http://localhost:5000/api/catalog/owned/${userStore.id}`);
+          ownedItems.value = response.data;
         } catch (error) {
-          console.error('Failed to equip item:', error);
-          message.value = 'Failed to equip item.';
+          console.error('Failed to fetch owned items:', error);
+          message.value = 'Failed to load owned items.';
         }
       };
   
-      // Unequip Item
-      const unequipItem = async (itemId) => {
+      // Fetch Equipped Items
+      const fetchEquippedItems = async () => {
         try {
-          console.log('Unequipping item with item ID:', itemId); // Debug log
-          await axios.post('http://localhost:5000/api/catalog/unequip', {
-            userId: userStore.id,
-            itemId: itemId,
-          });
-          message.value = 'Item unequipped successfully!';
-          fetchOwnedItems(); // Refresh the list after unequipping
+          const response = await axios.get(`http://localhost:5000/api/catalog/equipped/${userStore.id}`);
+          equippedItems.value = response.data;
         } catch (error) {
-          console.error('Failed to unequip item:', error);
-          message.value = 'Failed to unequip item.';
+          console.error('Failed to fetch equipped items:', error);
+          message.value = 'Failed to load equipped items.';
+        }
+      };
+  
+      // Check if an item is equipped
+      const isItemEquipped = (itemId) => {
+        return equippedItems.value.some((item) => item.item_id === itemId);
+      };
+  
+      // Toggle Equip/Unequip Item
+      const toggleEquipItem = async (item) => {
+        try {
+          if (isItemEquipped(item.item_id)) {
+            // Unequip Item
+            await axios.post('http://localhost:5000/api/catalog/unequip', {
+              userId: userStore.id,
+              itemId: item.item_id,
+            });
+            message.value = 'Item unequipped successfully!';
+          } else {
+            // Equip Item
+            await axios.post('http://localhost:5000/api/catalog/equip', {
+              userId: userStore.id,
+              itemId: item.item_id,
+            });
+            message.value = 'Item equipped successfully!';
+          }
+  
+          // Refresh owned and equipped items
+          await fetchOwnedItems();
+          await fetchEquippedItems();
+        } catch (error) {
+          console.error('Failed to toggle equip/unequip item:', error);
+          message.value = 'Failed to change item status.';
         }
       };
   
       // Get Base Avatar URL
-      const getAvatarUrl = () => {
-        return '/src/assets/baseAvatarSpaced.png';
-      };
+      const getAvatarUrl = () => '/src/assets/baseAvatarSpaced.png';
   
       // Get Full Image URL
-      const getImageUrl = (imageUrl) => {
-        return imageUrl ? `http://localhost:5000${imageUrl}` : '/src/assets/baseAvatarSpaced.png';
-      };
+      const getImageUrl = (imageUrl) => (imageUrl ? `http://localhost:5000${imageUrl}` : '/src/assets/default-item.png');
   
       onMounted(() => {
         fetchOwnedItems();
+        fetchEquippedItems();
       });
   
       return {
         ownedItems,
         equippedItems,
         message,
-        equipItem,
-        unequipItem,
+        toggleEquipItem,
+        isItemEquipped,
         getAvatarUrl,
         getImageUrl,
       };
