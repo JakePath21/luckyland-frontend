@@ -39,11 +39,15 @@
   
           // Debug log
           console.log('Login response:', response.data);
+
   
           // Update userStore and localStorage
-          userStore.setUsername(this.username);
+          userStore.setUser(response.data.id,this.username);
           localStorage.setItem('token', response.data.token);
-  
+
+          // In your login function in Login.vue
+          console.log('User ID:', userStore.id);
+
           // Redirect to the dashboard
           this.router.push('/dashboard');
         } catch (error) {

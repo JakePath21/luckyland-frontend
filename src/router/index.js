@@ -3,16 +3,26 @@ import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Catalog from '../views/Catalog.vue';
+import CreateItem from '../views/CreateItem.vue';
+import ItemDetail from '../views/ItemDetail.vue'; 
 
 const routes = [
   { path: '/register', component: Register },
   { path: '/login', component: Login },
   { path: '/catalog', component: Catalog },
+  { path: '/catalog/:itemId', component: ItemDetail, props: true },
   { 
     path: '/dashboard', 
     component: Dashboard,
     meta: { requiresAuth: true } // Protect this route
   },
+  { path: '/create-item', component: CreateItem, meta: { requiresAuth: true } },
+  {
+    path: '/avatar',
+    name: 'Avatar',
+    component: () => import('../views/Avatar.vue')
+  }
+  
 ];
 
 const router = createRouter({
