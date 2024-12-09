@@ -6,15 +6,18 @@
         <!-- Left Section: Player Info and Avatar -->
         <div class="left-section">
           <div class="avatar-wrapper">
-            <img :src="getAvatarUrl()" alt="Base Avatar" class="avatar-image" />
-            <img
-              v-for="item in equippedItems"
-              :key="item.item_id"
-              :src="getImageUrl(item.image_url)"
-              alt="Equipped Item"
-              class="equipped-item-overlay"
-            />
-          </div>
+              <img :src="getAvatarUrl()" alt="Base Avatar" class="avatar-image" />
+              <img
+                v-for="item in sortedEquippedItems"
+                :key="item.item_id"
+                :src="getImageUrl(item.image_url)"
+                alt="Equipped Item"
+                class="equipped-item-overlay"
+                :class="getItemClass(item.item_type)"
+              />
+            </div>
+
+
   
           <div class="player-info">
             <h3 class="player-name">{{ userStore.username }}</h3>
@@ -72,52 +75,83 @@
   <script>
   import { userStore } from '../store/user';
   import axios from 'axios';
-  import { onMounted, ref } from 'vue';
+  import { onMounted, ref, computed } from 'vue';
   
   export default {
-    setup() {
-      const ownedItems = ref([]);
-      const equippedItems = ref([]);
-      const registrationDate = ref('');
-      const stats = ref({
-        betsPlaced: null,
-        goldWagered: null,
-        totalWon: null,
-        totalLost: null,
-        favoriteGame: null,
-      });
-  
-      // Fetch Owned Items
-      const fetchOwnedItems = async () => {
-        try {
-          const response = await axios.get(`http://localhost:5000/api/catalog/owned/${userStore.id}`);
-          ownedItems.value = response.data;
-        } catch (error) {
-          console.error('Failed to fetch owned items:', error);
-        }
-      };
-  
-      // Fetch Equipped Items
-      const fetchEquippedItems = async () => {
-        try {
-          const response = await axios.get(`http://localhost:5000/api/catalog/equipped/${userStore.id}`);
-          equippedItems.value = response.data;
-        } catch (error) {
-          console.error('Failed to fetch equipped items:', error);
-        }
-      };
-  
-      const getAvatarUrl = () => '/src/assets/baseAvatarSpaced.png';
-      const getImageUrl = (imageUrl) => (imageUrl ? `http://localhost:5000${imageUrl}` : '/src/assets/default-item.png');
-  
-      onMounted(() => {
-        fetchOwnedItems();
-        fetchEquippedItems();
-      });
-  
-      return { userStore, ownedItems, equippedItems, registrationDate, stats, getAvatarUrl, getImageUrl };
-    },
-  };
+  setup() {
+    const ownedItems = ref([]);
+    const equippedItems = ref([]);
+    const registrationDate = ref('');
+    const stats = ref({
+      betsPlaced: null,
+      goldWagered: null,
+      totalWon: null,
+      totalLost: null,
+      favoriteGame: null,
+    });
+
+    // Define the order of item types
+    const itemOrder = {
+      back: 1,
+      pants: 2,
+      shirt: 3,
+      hair: 4,
+      hat: 5,
+      package: 6,
+      front: 7,
+    };
+
+    // Fetch Owned Items
+    const fetchOwnedItems = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/catalog/owned/${userStore.id}`);
+        ownedItems.value = response.data;
+      } catch (error) {
+        console.error('Failed to fetch owned items:', error);
+      }
+    };
+
+    // Fetch Equipped Items
+    const fetchEquippedItems = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/catalog/equipped/${userStore.id}`);
+        equippedItems.value = response.data;
+      } catch (error) {
+        console.error('Failed to fetch equipped items:', error);
+      }
+    };
+
+    // Sort equipped items based on item type order
+    const sortedEquippedItems = computed(() => {
+      return equippedItems.value.slice().sort((a, b) => itemOrder[a.item_type] - itemOrder[b.item_type]);
+    });
+
+    // Method to return a dynamic class based on item type
+    const getItemClass = (itemType) => {
+      return `item-${itemType}`;
+    };
+
+    const getAvatarUrl = () => '/src/assets/baseAvatarSpaced.png';
+    const getImageUrl = (imageUrl) => (imageUrl ? `http://localhost:5000${imageUrl}` : '/src/assets/default-item.png');
+
+    onMounted(() => {
+      fetchOwnedItems();
+      fetchEquippedItems();
+    });
+
+    return {
+      userStore,
+      ownedItems,
+      equippedItems,
+      sortedEquippedItems,
+      registrationDate,
+      stats,
+      getAvatarUrl,
+      getImageUrl,
+      getItemClass, // Ensure this is returned
+    };
+  },
+};
   </script>
   
   <style scoped>
@@ -146,7 +180,7 @@
     flex: 1;
   }
   
-  .avatar-wrapper {
+  /* .avatar-wrapper {
     position: relative;
     width: 150px;
     height: 200px;
@@ -165,7 +199,61 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-  }
+  } */
+
+  .avatar-wrapper {
+  position: relative;
+  width: 150px;
+  height: 200px;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  position: relative;
+  z-index: 1; /* Default z-index for the base avatar */
+}
+
+/* Equipped items */
+.equipped-item-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Layering for each item type */
+.item-back {
+  z-index: 0; /* Back items behind the avatar */
+}
+
+.item-pants {
+  z-index: 2; /* Closest to the avatar, above back items */
+}
+
+.item-shirt {
+  z-index: 3; /* Above pants */
+}
+
+.item-hair {
+  z-index: 4; /* Above shirt and pants */
+}
+
+.item-hat {
+  z-index: 5; /* Above hair */
+}
+
+.item-package {
+  z-index: 6; /* Above hat and hair */
+}
+
+.item-front {
+  z-index: 7; /* In front of everything else */
+}
+
   
   /* Player Info */
   .player-info {

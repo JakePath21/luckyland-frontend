@@ -6,6 +6,7 @@
         </div>
         <div class="item-info">
           <h2>{{ item.name }}</h2>
+          <p class="item-type">Type: {{ item.item_type }}</p>
           <p class="description">{{ item.description }}</p>
           <div class="details-row">
             <h3 class="price">Price: {{ item.cost }} {{ item.currency_type }}</h3>
@@ -312,6 +313,12 @@ export default {
   .cancel-button {
     background-color: #ff4f4f;
   }
+
+  .item-type {
+  font-size: 0.9em;
+  color: #bbb;
+  margin-bottom: 1em;
+}
   
   .cancel-button:hover {
     background-color: #e03c3c;
