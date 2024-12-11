@@ -21,7 +21,7 @@
   
           <div class="player-info">
             <h3 class="player-name">{{ userStore.username }}</h3>
-            <p class="registration-date">Date Registered: {{ registrationDate || 'N/A' }}</p>
+            <p class="registration-date">Date Registered: {{ stats.registered_at || 'N/A' }}</p>
             <div class="currencies">
               <div class="currency gold">
                 <img src="/src/assets/goldicon.png" alt="Gold" />
@@ -51,7 +51,7 @@
         <div class="right-section">
           <h3 class="section-title">Your Inventory</h3>
           <div class="inventory-grid">
-            <div v-for="item in ownedItems" :key="item.id" class="inventory-item">
+            <div v-for="item in ownedItems" :key="item.id" class="inventory-item" @click="viewItemDetails(item.id)">
               <div class="inventory-item-box">
                 <img :src="getImageUrl(item.image_url)" alt="Item Image" class="inventory-item-image" />
                 <p>{{ item.name }}</p>
@@ -65,16 +65,30 @@
       <div class="friends-section">
         <h3 class="section-title">Friends</h3>
         <div class="friends-list">
-          <div class="friend" v-for="n in 8" :key="n">Friends</div>
+          <div class="friend" v-for="friend in friends" :key="friend.id" @click="goToProfile(friend.id)">
+            <div class="friend-avatar-wrapper">
+              <img :src="getAvatarUrl(friend.avatar)" alt="Friend Avatar" class="friend-avatar" />
+              <img
+                v-for="item in getSortedEquippedItems(friend.equipped_items)"
+                :key="item.item_id"
+                :src="getImageUrl(item.image_url)"
+                alt="Equipped Item"
+                class="friend-equipped-item-overlay"
+                :class="getItemClass(item.item_type)"
+              />
+            </div>
+            <p>{{ friend.username }}</p>
+          </div>
         </div>
-        <p class="see-all">See All →</p>
+        <p class="see-all" @click="goToAllUsers">See All →</p>
       </div>
     </div>
   </template>
   
   <script>
-  import { userStore } from '../store/user';
   import axios from 'axios';
+  import { userStore } from '../store/user';
+  import { useRouter } from 'vue-router';
   import { onMounted, ref, computed } from 'vue';
   
   export default {
@@ -82,6 +96,8 @@
     const ownedItems = ref([]);
     const equippedItems = ref([]);
     const registrationDate = ref('');
+    const router = useRouter();
+    const friends = ref([]);
     const stats = ref({
       betsPlaced: null,
       goldWagered: null,
@@ -89,6 +105,21 @@
       totalLost: null,
       favoriteGame: null,
     });
+
+    const fetchFriendsWithEquippedItems = async () => {
+        try {
+          const response = await axios.get(`http://localhost:5000/api/friends/${userStore.id}/friends`);
+          friends.value = await Promise.all(
+            response.data.map(async (friend) => {
+              const equippedResponse = await axios.get(`http://localhost:5000/api/catalog/equipped/${friend.id}`);
+              return { ...friend, equipped_items: equippedResponse.data };
+            })
+          );
+        } catch (error) {
+          console.error('Failed to fetch friends with equipped items:', error);
+        }
+      };
+
 
     // Define the order of item types
     const itemOrder = {
@@ -103,13 +134,25 @@
 
     // Fetch Owned Items
     const fetchOwnedItems = async () => {
-      try {
-        const response = await axios.get(`http://localhost:5000/api/catalog/owned/${userStore.id}`);
-        ownedItems.value = response.data;
-      } catch (error) {
-        console.error('Failed to fetch owned items:', error);
-      }
-    };
+        try {
+          const response = await axios.get(`http://localhost:5000/api/catalog/owned/${userStore.id}`);
+          ownedItems.value = response.data.map((item) => ({
+            ...item,
+            id: item.id || item.item_id, // Ensure `id` is set correctly
+          }));
+        } catch (error) {
+          console.error('Failed to fetch owned items:', error);
+        }
+      };
+
+
+      const viewItemDetails = (itemId) => {
+        if (itemId) {
+          router.push(`/catalog/${itemId}`);
+        } else {
+          console.error('Invalid item ID:', itemId);
+        }
+      };
 
     // Fetch Equipped Items
     const fetchEquippedItems = async () => {
@@ -131,12 +174,32 @@
       return `item-${itemType}`;
     };
 
+    const goToAllUsers = () => {
+      router.push('/friends');
+    };
+
+    const goToProfile = (friendId) => {
+      router.push(`/users/${friendId}`);
+    };
+
+    const goToItemPage = (itemId) => {
+      router.push(`/catalog/${itemId}`);
+    };
+
+
+    const getSortedEquippedItems = (equippedItems) => {
+            return Array.isArray(equippedItems)
+                ? equippedItems.slice().sort((a, b) => itemOrder[a.item_type] - itemOrder[b.item_type])
+                : [];
+        };
+
     const getAvatarUrl = () => '/src/assets/baseAvatarSpaced.png';
     const getImageUrl = (imageUrl) => (imageUrl ? `http://localhost:5000${imageUrl}` : '/src/assets/default-item.png');
 
     onMounted(() => {
       fetchOwnedItems();
       fetchEquippedItems();
+      fetchFriendsWithEquippedItems();
     });
 
     return {
@@ -145,9 +208,15 @@
       equippedItems,
       sortedEquippedItems,
       registrationDate,
+      getSortedEquippedItems,
       stats,
       getAvatarUrl,
       getImageUrl,
+      goToAllUsers,
+      friends,
+      goToProfile,
+      goToItemPage,
+      viewItemDetails,
       getItemClass, // Ensure this is returned
     };
   },
@@ -341,26 +410,74 @@
   }
   
   .friends-list {
-    display: flex;
-    gap: 1em;
-    justify-content: center;
-  }
-  
-  .friend {
-    background: #444;
-    padding: 1em;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .see-all {
-    color: #42b983;
-    cursor: pointer;
-    margin-top: 1em;
-  }
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+  justify-content: center;
+}
+
+.friend {
+  background: #444;
+  padding: 0.5em;
+  border-radius: 8px;
+  width: 80px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.friend,
+.inventory-item {
+  transition: transform 0.2s, background-color 0.2s;
+  cursor: pointer;
+}
+
+.friend:hover,
+.inventory-item:hover {
+  transform: scale(1.05);
+  background-color: #555;
+}
+
+
+.friend-avatar-wrapper {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 0.5em;
+}
+
+.friend-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Changed from 'cover' to 'contain' */
+  position: relative;
+  z-index: 1;
+}
+
+.friend-equipped-item-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+
+.see-all {
+  color: #007bff;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 1em;
+}
+
+.see-all:hover {
+  text-decoration: underline;
+}
+
   </style>
   

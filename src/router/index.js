@@ -3,6 +3,9 @@ import Login from '../views/Login.vue';
 import Register from '../views/Register.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Catalog from '../views/Catalog.vue';
+import Profile from '../views/Profile.vue';
+import Friends from '../views/Friends.vue';
+import Users from '../views/Users.vue';
 import CreateItem from '../views/CreateItem.vue';
 
 const routes = [
@@ -26,7 +29,10 @@ const routes = [
     component: Dashboard,
     meta: { requiresAuth: true } // Protect this route
   },
+  { path: '/users/:id', name: 'Profile', component: Profile },
+  { path: '/friends', name: 'Friends', component: Friends, meta: { requiresAuth: true }  },
   { path: '/create-item', component: CreateItem, meta: { requiresAuth: true } },
+  { path: '/users', component: Users, meta: { requiresAuth: true } },
   {
     path: '/avatar',
     name: 'Avatar',
