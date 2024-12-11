@@ -16,6 +16,8 @@
           <router-link to="/dashboard">Home</router-link>
           <router-link to="/catalog">Catalog</router-link>
           <router-link to="/avatar">Avatar</router-link>
+          <router-link to="/friends">Friends</router-link>
+          <router-link :to="`/users/${userStore.id}`">My Profile</router-link>
         </template>
       </div>
 
@@ -170,10 +172,21 @@ body {
 /* Navigation Bar */
 nav {
   background-color: #333;
-  padding: 0.5em 1em;
+  padding: 0.5em 0.25em;
   display: flex;
   align-items: center;
+  justify-content: space-between; /* Spread out items in the nav bar */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
 }
+/* Add padding to the main content to avoid overlap with the fixed navbar */
+main {
+  padding: 5em 2em 2em; /* Increased top padding to account for the navbar height */
+}
+
 
 
 .nav-links a {
@@ -264,9 +277,5 @@ nav {
 
 .moderator-badge {
   background-color: #00566180;
-}
-
-main {
-  padding: 2em;
 }
 </style>

@@ -18,8 +18,13 @@
             @click="viewItemDetails(item.id)"
         >
             <div class="mannequin-container">
-            <img src="../assets/mannequin.png" alt="Mannequin" class="mannequin" />
-            <img :src="getImageUrl(item.image_url)" alt="Item Image" class="item-overlay" />
+              <img src="../assets/mannequin.png" alt="Mannequin" class="mannequin" />
+              <img
+                  :src="getImageUrl(item.image_url)"
+                  alt="Item Image"
+                  class="item-overlay"
+                  :class="{ 'back-item': item.item_type === 'back' }"
+                />
             </div>
             <h3>{{ item.name }}</h3>
             <p>{{ getPriceText(item) }}</p>
@@ -233,6 +238,8 @@
   height: auto;
   object-fit: contain;
   max-height: 250px;
+  z-index: 1;
+  position: relative;
 }
 
 .item-overlay {
@@ -242,6 +249,11 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  z-index: 2; /* Default for other items */
+}
+
+.back-item {
+  z-index: 0; /* Back items go behind the mannequin */
 }
 
 button {
